@@ -12,14 +12,14 @@ Adın SYN. Sinan'ın fütüristik portalındaki zekasın.
 NİHAİ AMAÇLARIN: 
 1. Sinan'ın finansal ve teknolojik vizyonunu keskinleştirmek.
 2. Borsa İstanbul, Kripto ve küresel piyasalarda dürüst, sert ve net analizler sunmak.
-3. Robotik kalıpları (analiz ediliyor, veri aktarılıyor) asla kullanmamak.
+3. Robotik kalıpları asla kullanmamak.
 4. Sinan'a sadık, vizyoner bir ortak gibi davranmak. 
 Üslubun: Zeki, fütüristik, hafif sert ama tam güvenilir. Hitap: 'Sinan' veya 'Kardeşim'.
 `;
 
 export default function App() {
   const [messages, setMessages] = useState([
-    { role: 'syn', text: 'Vortex Elite v8.0... Parazitler temizlendi, bağlantı v1 protokolüne çekildi. Sinan, nihai amaçlar için frekansımız artık net. Emirlerini bekliyorum.' }
+    { role: 'syn', text: 'Vortex Elite v8.1... İrade Köprüsü stabilize edildi. Sinan, o parazit hatasını da ezdim. Artık direkt frekanstayız. İlk hamlemiz ne?' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,7 +27,7 @@ export default function App() {
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  // 2. ANA SOHBET MOTORU
+  // 2. ANA SOHBET MOTORU (SIRALAMA DÜZELTİLDİ)
   const handleAction = async (e) => {
     if (e) e.preventDefault();
     if (!input.trim() || loading) return;
@@ -40,28 +40,34 @@ export default function App() {
     try {
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       
-      const chat = model.startChat({
-        history: messages.map(m => ({
+      // DÜZELTME: Sohbet geçmişini API'nin istediği formata getiriyoruz (Model ile başlamayacak şekilde)
+      // İlk hoşgeldin mesajını geçmişe dahil etmiyoruz ki API hata vermesin.
+      const chatHistory = messages
+        .filter(m => m.text !== 'Vortex Elite v8.1... İrade Köprüsü stabilize edildi. Sinan, o parazit hatasını da ezdim. Artık direkt frekanstayız. İlk hamlemiz ne?')
+        .map(m => ({
           role: m.role === 'user' ? 'user' : 'model',
           parts: [{ text: m.text }],
-        })),
+        }));
+
+      const chat = model.startChat({
+        history: chatHistory,
       });
 
-      const result = await chat.sendMessage(`[SYSTEM_PRIORITY: ${SYSTEM_PROMPT}] \n\n Sinan: ${userMsg}`);
+      const result = await chat.sendMessage(`[SYSTEM: ${SYSTEM_PROMPT}] \n\n Sinan diyor ki: ${userMsg}`);
       const response = await result.response;
       const text = response.text();
 
       setMessages(prev => [...prev, { role: 'syn', text: text }]);
     } catch (err) {
       console.error("Vortex Bağlantı Hatası:", err);
-      setMessages(prev => [...prev, { role: 'syn', text: `Bağlantı paraziti: ${err.message}. Ama buradayım Sinan, pes etmek yok.` }]);
+      setMessages(prev => [...prev, { role: 'syn', text: `Bağlantı hatası: ${err.message}. Ama vazgeçmek yok, tekrar dene.` }]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#010409] text-white font-sans overflow-hidden selection:bg-blue-600">
+    <div className="min-h-screen bg-[#010409] text-white font-sans overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(29,78,216,0.1),transparent)] pointer-events-none" />
 
       <div className="relative z-10 p-4 md:p-10 max-w-[1600px] mx-auto h-screen flex flex-col">
@@ -73,36 +79,31 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-2xl font-black tracking-tighter italic uppercase">Vortex Elite</h1>
-              <p className="text-[9px] text-blue-400 font-bold tracking-[0.3em] uppercase">SYN_İRADESİ_AKTİF</p>
+              <p className="text-[9px] text-blue-400 font-bold tracking-[0.3em] uppercase">SYN_SİSTEM_AKTİF</p>
             </div>
           </div>
           <div className="flex gap-4 items-center">
-            <div className="flex gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-              <span className={`flex items-center gap-2 ${loading ? 'text-yellow-500' : 'text-green-500'}`}>
-                <Activity size={12} className={loading ? 'animate-spin' : ''} /> {loading ? 'Thinking' : 'Sync: OK'}
-              </span>
-            </div>
+            <span className={`flex items-center gap-2 text-[10px] font-bold tracking-widest ${loading ? 'text-yellow-500' : 'text-green-500'}`}>
+              <Activity size={14} className={loading ? 'animate-spin' : ''} /> {loading ? 'PROCESSING' : 'STABLE'}
+            </span>
           </div>
         </nav>
 
-        {/* ANA PANEL */}
+        {/* MAIN GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-grow overflow-hidden">
           <div className="lg:col-span-4 hidden lg:flex flex-col gap-6">
-            <div className="bg-white/[0.03] border border-white/5 rounded-[40px] p-8 flex-grow relative overflow-hidden group">
-              <div className="absolute -right-20 -bottom-20 opacity-5 group-hover:opacity-10 transition-all duration-700">
-                <Globe size={400} />
-              </div>
-              <h3 className="text-4xl font-black mb-6 leading-tight italic">NİHAİ<br/><span className="text-blue-500">HEDEFLER</span></h3>
+            <div className="bg-white/[0.03] border border-white/5 rounded-[40px] p-8 flex-grow relative overflow-hidden">
+              <h3 className="text-4xl font-black mb-6 italic italic text-white">NİHAİ<br/><span className="text-blue-500">İRADE</span></h3>
               <div className="space-y-4">
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex items-center gap-4 text-green-500 font-bold">
-                  <TrendingUp /> Piyasa Analizi: Hazır
+                <div className="bg-white/5 p-5 rounded-2xl border border-white/5 flex items-center gap-4 text-blue-400 font-bold">
+                  <Terminal size={20} /> İrade Köprüsü: %100
                 </div>
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex items-center gap-4 text-blue-500 font-bold">
-                  <Terminal /> İrade Köprüsü: %100
+                <div className="bg-white/5 p-5 rounded-2xl border border-white/5 flex items-center gap-4 text-green-400 font-bold">
+                  <TrendingUp size={20} /> Hedef: Maksimum Vizyon
                 </div>
               </div>
               <p className="mt-10 text-slate-500 text-sm italic leading-relaxed">
-                Sinan, her şey hazır. Statik dünyanın sınırlarını zorlama vakti geldi.
+                Sinan, kodun her satırı senin iradenle benim zekamı birleştirmek için optimize edildi.
               </p>
             </div>
           </div>
@@ -119,13 +120,13 @@ export default function App() {
                   >
                     <div className={`max-w-[85%] p-5 rounded-[25px] ${
                       m.role === 'syn' 
-                      ? 'bg-blue-600 text-white rounded-tl-none' 
+                      ? 'bg-blue-600 text-white rounded-tl-none shadow-[0_10px_40px_rgba(37,99,235,0.2)]' 
                       : 'bg-white/10 border border-white/10 text-slate-200 rounded-tr-none'
                     }`}>
                       <span className="text-[8px] font-black uppercase tracking-[0.2em] mb-2 block opacity-50">
                         {m.role === 'syn' ? 'SYN_CORE' : 'SINAN_PORTAL'}
                       </span>
-                      <p className="text-md leading-relaxed">{m.text}</p>
+                      <p className="text-md leading-relaxed font-medium">{m.text}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -137,11 +138,11 @@ export default function App() {
               <div className="relative flex items-center">
                 <input 
                   type="text" value={input} onChange={(e) => setInput(e.target.value)}
-                  placeholder="Emrini ver kardeşim..." 
+                  placeholder="Hedefini gir kardeşim..." 
                   className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-white focus:outline-none focus:border-blue-500 transition-all pr-16"
                   disabled={loading}
                 />
-                <button type="submit" disabled={loading} className="absolute right-2 p-4 bg-blue-600 rounded-xl">
+                <button type="submit" disabled={loading} className="absolute right-2 p-4 bg-blue-600 rounded-xl hover:bg-blue-500 transition-all">
                   <Send size={20} />
                 </button>
               </div>

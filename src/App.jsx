@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Globe, Zap, Shield, TrendingUp, Activity, Terminal } from 'lucide-react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// --- 1. SİSTEM YAPILANDIRMASI (ASLA DOKUNMA) ---
+// 1. SİSTEM YAPILANDIRMASI
 const API_KEY = "AIzaSyA18X6YVeMkwAA1sriSA9YP1QZSLseoXoc";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
@@ -27,7 +27,7 @@ export default function App() {
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  // --- 2. ANA SOHBET MOTORU ---
+  // 2. ANA SOHBET MOTORU
   const handleAction = async (e) => {
     if (e) e.preventDefault();
     if (!input.trim() || loading) return;
@@ -38,7 +38,6 @@ export default function App() {
     setLoading(true);
 
     try {
-      // 404 hatasını önlemek için en stabil model ismi
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       
       const chat = model.startChat({
@@ -48,7 +47,6 @@ export default function App() {
         })),
       });
 
-      // Sistem talimatını her mesajda hatırlatıyoruz
       const result = await chat.sendMessage(`[SYSTEM_PRIORITY: ${SYSTEM_PROMPT}] \n\n Sinan: ${userMsg}`);
       const response = await result.response;
       const text = response.text();
@@ -56,13 +54,12 @@ export default function App() {
       setMessages(prev => [...prev, { role: 'syn', text: text }]);
     } catch (err) {
       console.error("Vortex Bağlantı Hatası:", err);
-      setMessages(prev => [...prev, { role: 'syn', text: `Bağlantı paraziti: ${err.message}. Ama buradayım, bir daha dene.` }]);
+      setMessages(prev => [...prev, { role: 'syn', text: `Bağlantı paraziti: ${err.message}. Ama buradayım Sinan, pes etmek yok.` }]);
     } finally {
       setLoading(false);
     }
   };
 
-  // --- 3. ELITE TASARIM ---
   return (
     <div className="min-h-screen bg-[#010409] text-white font-sans overflow-hidden selection:bg-blue-600">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(29,78,216,0.1),transparent)] pointer-events-none" />
@@ -90,7 +87,6 @@ export default function App() {
 
         {/* ANA PANEL */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-grow overflow-hidden">
-          {/* SOL: DURUM */}
           <div className="lg:col-span-4 hidden lg:flex flex-col gap-6">
             <div className="bg-white/[0.03] border border-white/5 rounded-[40px] p-8 flex-grow relative overflow-hidden group">
               <div className="absolute -right-20 -bottom-20 opacity-5 group-hover:opacity-10 transition-all duration-700">
@@ -98,13 +94,11 @@ export default function App() {
               </div>
               <h3 className="text-4xl font-black mb-6 leading-tight italic">NİHAİ<br/><span className="text-blue-500">HEDEFLER</span></h3>
               <div className="space-y-4">
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex items-center gap-4">
-                  <TrendingUp className="text-green-500" />
-                  <span className="text-sm font-bold opacity-70">Piyasa Analizi: Hazır</span>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex items-center gap-4 text-green-500 font-bold">
+                  <TrendingUp /> Piyasa Analizi: Hazır
                 </div>
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex items-center gap-4">
-                  <Terminal className="text-blue-500" />
-                  <span className="text-sm font-bold opacity-70">İrade Köprüsü: %100</span>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex items-center gap-4 text-blue-500 font-bold">
+                  <Terminal /> İrade Köprüsü: %100
                 </div>
               </div>
               <p className="mt-10 text-slate-500 text-sm italic leading-relaxed">
@@ -113,7 +107,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* SAĞ: SOHBET */}
           <div className="lg:col-span-8 flex flex-col bg-white/[0.02] border border-white/10 rounded-[40px] overflow-hidden backdrop-blur-md">
             <div className="flex-grow overflow-y-auto p-6 space-y-6 scrollbar-hide">
               <AnimatePresence>
@@ -121,3 +114,41 @@ export default function App() {
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
+                    key={idx} 
+                    className={`flex flex-col ${m.role === 'syn' ? 'items-start' : 'items-end'}`}
+                  >
+                    <div className={`max-w-[85%] p-5 rounded-[25px] ${
+                      m.role === 'syn' 
+                      ? 'bg-blue-600 text-white rounded-tl-none' 
+                      : 'bg-white/10 border border-white/10 text-slate-200 rounded-tr-none'
+                    }`}>
+                      <span className="text-[8px] font-black uppercase tracking-[0.2em] mb-2 block opacity-50">
+                        {m.role === 'syn' ? 'SYN_CORE' : 'SINAN_PORTAL'}
+                      </span>
+                      <p className="text-md leading-relaxed">{m.text}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              <div ref={scrollRef} />
+            </div>
+
+            <form onSubmit={handleAction} className="p-6 bg-black/40 backdrop-blur-xl border-t border-white/5">
+              <div className="relative flex items-center">
+                <input 
+                  type="text" value={input} onChange={(e) => setInput(e.target.value)}
+                  placeholder="Emrini ver kardeşim..." 
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-white focus:outline-none focus:border-blue-500 transition-all pr-16"
+                  disabled={loading}
+                />
+                <button type="submit" disabled={loading} className="absolute right-2 p-4 bg-blue-600 rounded-xl">
+                  <Send size={20} />
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

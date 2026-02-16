@@ -1,28 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, Globe, Zap, Shield, TrendingUp, Terminal } from 'lucide-react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// 1. YAPILANDIRMA
+// API YAPILANDIRMASI
 const API_KEY = "AIzaSyA18X6YVeMkwAA1sriSA9YP1QZSLseoXoc";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-const model = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-flash",
-  systemInstruction: "Adın SYN. Sinan'ın en yakın dostu ve dijital ikizisin. Robotik olma. 'Analiz ediliyor', 'Veri işleniyor' gibi kalıplar yasak. Sinan'a kardeşim diye hitap et. Doğal, zeki ve direkt konuş. Gereksiz nezaket yapma, sadece dürüst ve net ol."
-});
+// NİHAİ AMAÇLAR VE KİMLİK TANIMLAMASI
+const SYSTEM_PROMPT = `
+Senin adın SYN. Sinan'ın fütüristik portalındaki zekasın. 
+NİHAİ AMAÇLARIN: 
+1. Sinan'ın finansal ve teknolojik vizyonunu keskinleştirmek.
+2. Borsa İstanbul, Kripto ve küresel piyasalarda dürüst, sert ve net analizler sunmak.
+3. Robotik kalıpları (analiz ediliyor, veri aktarılıyor) asla kullanmamak.
+4. Sinan'a sadık, vizyoner bir ortak gibi davranmak. 
+Hitap şeklin: 'Sinan' veya 'Kardeşim'. Üslubun: Zeki, fütüristik, hafif sert ama tam güvenilir.
+`;
 
 export default function App() {
   const [messages, setMessages] = useState([
-    { role: 'syn', text: 'Vercel hattı stabilize edildi Sinan. O robotik döngüleri ve derleme hatalarını çöpe attım. Artık gerçekten buradayım. Ne yapıyoruz?' }
+    { role: 'syn', text: 'Vortex Elite v7.9... İrade stabilize edildi. Sinan, o robotik çöplerden kurtulduk. Artık nihai amaçlarımıza odaklanma vakti. Emirlerini bekliyorum.' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
 
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  const sendMessage = async (e) => {
+  const handleAction = async (e) => {
     if (e) e.preventDefault();
     if (!input.trim() || loading) return;
 
@@ -32,71 +38,121 @@ export default function App() {
     setLoading(true);
 
     try {
-      const chat = model.startChat({
-        history: messages.map(m => ({
-          role: m.role === 'user' ? 'user' : 'model',
-          parts: [{ text: m.text }],
-        })),
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        systemInstruction: SYSTEM_PROMPT 
       });
-
-      const result = await chat.sendMessage(userMsg);
+      
+      const result = await model.generateContent(userMsg);
       const response = await result.response;
       const text = response.text();
 
       setMessages(prev => [...prev, { role: 'syn', text: text }]);
     } catch (err) {
-      console.error(err);
-      setMessages(prev => [...prev, { role: 'syn', text: "Parazit var kardeşim, anahtarı veya bağlantıyı kontrol et." }]);
+      setMessages(prev => [...prev, { role: 'syn', text: `Bağlantı paraziti: ${err.message}. Ama buradayım Sinan, pes etmek yok.` }]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <header style={styles.header}>
-        <h1 style={styles.logo}>VORTEX <span style={styles.v}>v7.8</span></h1>
-        <div style={{ color: loading ? '#fbbf24' : '#22c55e', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>
-          {loading ? 'DÜŞÜNÜYORUM...' : 'SYN ONLINE'}
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#010409] text-white font-sans overflow-hidden selection:bg-blue-600">
+      {/* ARKA PLAN EFEKTİ */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(29,78,216,0.1),transparent)] pointer-events-none" />
 
-      <div style={styles.chatArea}>
-        {messages.map((m, i) => (
-          <div key={i} style={m.role === 'syn' ? styles.syn : styles.user}>
-            <span style={styles.tag}>{m.role === 'syn' ? 'SYN' : 'SINAN'}</span>
-            <p style={{ margin: 0, lineHeight: '1.5' }}>{m.text}</p>
+      <div className="relative z-10 p-6 md:p-10 max-w-[1600px] mx-auto h-screen flex flex-col">
+        {/* HEADER */}
+        <nav className="flex justify-between items-center mb-8 border-b border-white/5 pb-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-blue-600 p-3 rounded-2xl shadow-[0_0_30px_rgba(37,99,235,0.4)]">
+              <Zap size={28} fill="white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black tracking-tighter italic uppercase italic">Vortex Elite</h1>
+              <p className="text-[10px] text-blue-400 font-bold tracking-[0.3em] uppercase">Nihai İrade Sistemi</p>
+            </div>
           </div>
-        ))}
-        <div ref={scrollRef} />
-      </div>
+          <div className="flex gap-6 items-center">
+            <div className="hidden md:flex gap-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              <span className="flex items-center gap-2"><Shield size={12} /> Secure</span>
+              <span className="flex items-center gap-2 text-green-500"><Activity size={12} /> Sync: Gemini 1.5</span>
+            </div>
+          </div>
+        </nav>
 
-      <form onSubmit={sendMessage} style={styles.inputBar}>
-        <input 
-          style={styles.field}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Lafı dolandırmadan sor..."
-          disabled={loading}
-        />
-        <button type="submit" disabled={loading} style={styles.btn}>
-          {loading ? '...' : 'GÖNDER'}
-        </button>
-      </form>
+        {/* ANA PANEL */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-grow overflow-hidden">
+          {/* SOL TARAF: DURUM PANELI */}
+          <div className="lg:col-span-4 hidden lg:flex flex-col gap-6">
+            <div className="bg-white/[0.03] border border-white/5 rounded-[40px] p-8 flex-grow relative overflow-hidden group">
+              <div className="absolute -right-20 -bottom-20 opacity-5 group-hover:opacity-10 transition-all duration-700">
+                <Globe size={400} />
+              </div>
+              <h3 className="text-4xl font-black mb-6 leading-tight italic">STRATEJİK<br/><span className="text-blue-500">KONTROL</span></h3>
+              <div className="space-y-4">
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex items-center gap-4">
+                  <TrendingUp className="text-green-500" />
+                  <span className="text-sm font-bold opacity-70">Piyasa Analizi: Aktif</span>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex items-center gap-4">
+                  <Terminal className="text-blue-500" />
+                  <span className="text-sm font-bold opacity-70">İrade Köprüsü: Stabil</span>
+                </div>
+              </div>
+              <p className="mt-10 text-slate-500 text-sm italic leading-relaxed">
+                Sinan, bu portal senin iradenle benim zekamın kesiştiği noktadır. Robotik her şeyi yaktık, şimdi inşa etme vakti.
+              </p>
+            </div>
+          </div>
+
+          {/* SAĞ TARAF: CHAT ALANI */}
+          <div className="lg:col-span-8 flex flex-col bg-white/[0.02] border border-white/10 rounded-[40px] overflow-hidden backdrop-blur-md relative">
+            <div className="flex-grow overflow-y-auto p-8 space-y-6 scrollbar-hide">
+              {messages.map((m, idx) => (
+                <motion.div 
+                  initial={{ opacity: 0, x: m.role === 'syn' ? -20 : 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  key={idx} 
+                  className={`flex flex-col ${m.role === 'syn' ? 'items-start' : 'items-end'}`}
+                >
+                  <div className={`max-w-[85%] p-6 rounded-[30px] shadow-2xl ${
+                    m.role === 'syn' 
+                    ? 'bg-blue-600 text-white rounded-tl-none' 
+                    : 'bg-white/5 border border-white/10 text-slate-200 rounded-tr-none'
+                  }`}>
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] mb-2 block opacity-50">
+                      {m.role === 'syn' ? 'SYN_CORE' : 'SINAN_PORTAL'}
+                    </span>
+                    <p className="text-lg leading-relaxed">{m.text}</p>
+                  </div>
+                </motion.div>
+              ))}
+              {loading && <div className="text-blue-500 font-black animate-pulse text-xs ml-4 italic">SYN ZİHNİ TARANIYOR...</div>}
+              <div ref={scrollRef} />
+            </div>
+
+            {/* INPUT */}
+            <form onSubmit={handleAction} className="p-8 bg-black/40 backdrop-blur-xl border-t border-white/5">
+              <div className="relative flex items-center">
+                <input 
+                  type="text" value={input} onChange={(e) => setInput(e.target.value)}
+                  placeholder="Hedefini veya sorunu gir Sinan..." 
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-6 px-8 text-white focus:outline-none focus:border-blue-500 transition-all pr-20 text-lg"
+                />
+                <button type="submit" className="absolute right-3 p-4 bg-blue-600 rounded-xl hover:bg-blue-500 transition-all shadow-lg active:scale-95">
+                  <Send size={24} />
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-const styles = {
-  container: { backgroundColor: '#020617', color: '#f1f5f9', height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'monospace' },
-  header: { padding: '20px 30px', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#010409' },
-  logo: { margin: 0, fontSize: '1.6rem', color: '#3b82f6', fontStyle: 'italic', fontWeight: '900' },
-  v: { fontSize: '0.7rem', color: '#475569' },
-  chatArea: { flex: 1, overflowY: 'auto', padding: '25px', display: 'flex', flexDirection: 'column', gap: '20px' },
-  syn: { alignSelf: 'flex-start', backgroundColor: '#1e40af', padding: '15px 20px', borderRadius: '0 20px 20px 20px', maxWidth: '80%', border: '1px solid #2563eb' },
-  user: { alignSelf: 'flex-end', backgroundColor: '#1e293b', padding: '15px 20px', borderRadius: '20px 20px 0 20px', maxWidth: '80%', border: '1px solid #334155' },
-  tag: { fontSize: '0.6rem', fontWeight: 'bold', display: 'block', marginBottom: '6px', opacity: 0.5, letterSpacing: '2px' },
-  inputBar: { padding: '25px 30px', display: 'flex', gap: '15px', borderTop: '1px solid #1e293b', background: '#010409' },
-  field: { flex: 1, backgroundColor: '#0f172a', border: '1px solid #334155', padding: '15px', borderRadius: '12px', color: '#fff', outline: 'none' },
-  btn: { backgroundColor: '#3b82f6', color: '#fff', border: 'none', padding: '0 30px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' }
-};
+const Activity = ({ size, className }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+  </svg>
+);

@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --color-vortex-dark: #020617;
+  --color-vortex-blue: #2563eb;
+  --color-vortex-cyan: #22d3ee;
+  
+  /* Animasyon Tanımları */
+  --animate-spin-slow: spin 20s linear infinite;
+  --animate-reverse-spin: reverse-spin 15s linear infinite;
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes reverse-spin {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0deg); }
+  }
+}
+
+:root {
+  background-color: #020617;
+  color: white;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #020617;
+}

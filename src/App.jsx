@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Radar, Terminal, AlertTriangle, Search, Activity, Cpu } from 'lucide-react';
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+const API_KEY = import.meta.env.GEMINI_API_KEY || "";
 
 export default function App() {
   const [logs, setLogs] = useState([{ t: "VORTEX_DIAGNOSTIC: Sistem otopsisi başlatıldı.", c: "#0055ff" }]);

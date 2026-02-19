@@ -1,113 +1,115 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Radar, Cpu, Rocket, DollarSign, Send, Activity, MessageSquare, Heart, Repeat } from 'lucide-react';
+import { Radar, Cpu, Zap, Activity, Globe, Terminal, Search, TrendingUp, ShieldCheck } from 'lucide-react';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
 export default function App() {
   const [dataNodes, setDataNodes] = useState([]);
-  const [activeTab, setActiveTab] = useState('AI');
-  const [logs, setLogs] = useState([{ r: 'ai', t: "VORTEX_PRIME: Operatör SYN saptandı. Tam yetki devredildi." }]);
-  const [input, setInput] = useState('');
+  const [activeNode, setActiveNode] = useState(null);
+  const [logs, setLogs] = useState([{ r: 'ai', t: "VORTEX_CORE v4.0: SYN yetkisiyle sistem rezonansı başlatıldı." }]);
+  const [isSyncing, setIsSyncing] = useState(false);
   const chatEnd = useRef(null);
 
-  // --- OTONOM MOTOR: DÜNYAYI TARA ---
   const syncVortex = async () => {
     if (!API_KEY) return;
+    setIsSyncing(true);
     try {
       const genAI = new GoogleGenerativeAI(API_KEY);
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       
-      const prompt = `Şu an dünyada en çok konuşulan 20 teknoloji/ekonomi haberini analiz et. 
-      Her biri için: Kategori (AI, Kripto, Uzay, Teknoloji), Başlık, YouTube ID, 2 kısa siber yorum. 
-      Sadece bu formatta JSON ver: [{"cat": "AI", "title": "...", "vid": "...", "tweets": ["...", "..."], "analysis": "..."}]`;
+      const prompt = `Dünyadaki en popüler ve kritik 25 konuyu (AI, Kripto, Teknoloji, Uzay) analiz et. 
+      Her biri için: Başlık, YouTube ID, Rasyonel Analiz. 
+      JSON formatında döndür: [{"title": "...", "vid": "...", "analysis": "..."}]`;
 
       const result = await model.generateContent(prompt);
-      const cleanJSON = result.response.text().replace(/```json|```/g, "").trim();
-      setDataNodes(JSON.parse(cleanJSON));
-      setLogs(prev => [...prev, { r: 'ai', t: "KÜRESEL_TARAMA: 20 kritik veri süzgece alındı." }]);
+      const data = JSON.parse(result.response.text().replace(/```json|```/g, "").trim());
+      setDataNodes(data);
+      if (!activeNode) setActiveNode(data[0]);
+      setLogs(prev => [...prev, { r: 'ai', t: `${data.length} veri düğümü senkronize edildi.` }]);
     } catch (e) {
-      setLogs(prev => [...prev, { r: 'ai', t: "KRİTİK_HATA: API hattında parazit var SYN." }]);
-    }
+      setLogs(prev => [...prev, { r: 'ai', t: "VERİ_SÜZGEÇ_HATASI: Bağlantı stabil değil." }]);
+    } finally { setIsSyncing(false); }
   };
 
   useEffect(() => { syncVortex(); }, []);
   useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]);
 
-  const handleChat = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || !API_KEY) return;
-    const msg = input;
-    setLogs(prev => [...prev, { r: 'user', t: msg }]);
-    setInput('');
-
-    try {
-      const genAI = new GoogleGenerativeAI(API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const result = await model.generateContent(`Sen Vortex'sin. Kullanıcın SYN. Rasyonel, zeki ve kısa cevap ver: ${msg}`);
-      setLogs(prev => [...prev, { r: 'ai', t: result.response.text() }]);
-    } catch (err) {
-      setLogs(prev => [...prev, { r: 'ai', t: "Sinyal Kesildi." }]);
-    }
-  };
-
-  const currentNodes = dataNodes.filter(n => n.cat === activeTab);
-
   return (
-    <div className="flex h-screen bg-[#020205] text-[#d1d1d1] font-mono overflow-hidden">
-      {/* SIDEBAR */}
-      <nav className="w-64 border-r border-[#111] bg-black p-6 flex flex-col gap-4">
-        <div className="flex items-center gap-3 mb-10 text-[#0055ff]">
-          <Radar className="animate-ping" size={20} />
-          <h1 className="font-black text-xl tracking-tighter italic">VORTEX</h1>
+    <div style={{ backgroundColor: '#020204', color: '#888', height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'monospace', overflow: 'hidden' }}>
+      
+      {/* ÜST BAR: 2026 SİBERPUNK ARA YÜZ */}
+      <header style={{ height: '60px', borderBottom: '1px solid #111', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 25px', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <Radar size={20} style={{ color: isSyncing ? '#00ff00' : '#0055ff' }} className={isSyncing ? 'animate-pulse' : ''} />
+          <h1 style={{ color: '#fff', fontSize: '14px', fontWeight: '900', letterSpacing: '4px', margin: 0 }}>VORTEX // <span style={{ color: '#0055ff' }}>NEXUS</span></h1>
         </div>
-        {['AI', 'Kripto', 'Uzay', 'Teknoloji'].map(t => (
-          <button key={t} onClick={() => setActiveTab(t)} className={`text-left p-3 rounded-lg text-xs font-bold tracking-widest transition-all ${activeTab === t ? 'bg-[#0055ff] text-white' : 'hover:bg-[#111] text-[#444]'}`}>
-            {t}
-          </button>
-        ))}
-      </nav>
+        <div style={{ display: 'flex', gap: '30px', fontSize: '10px' }}>
+          <div style={{ color: '#222' }}>STATUS: <span style={{ color: '#00ff00' }}>ONLINE</span></div>
+          <div style={{ color: '#222' }}>OPERATOR: <span style={{ color: '#fff' }}>SYN</span></div>
+        </div>
+      </header>
 
-      {/* FEED */}
-      <main className="flex-1 overflow-y-auto p-10 bg-[#050508] space-y-10">
-        {currentNodes.length === 0 ? (
-          <div className="text-[#222] animate-pulse">VERİ SÜZÜLÜYOR...</div>
-        ) : currentNodes.map((n, i) => (
-          <div key={i} className="border border-[#111] bg-black rounded-2xl overflow-hidden group hover:border-[#0055ff]/50 transition-all">
-            <div className="aspect-video relative">
-              <iframe src={`https://www.youtube.com/embed/${n.vid}?autoplay=1&mute=1&controls=0`} className="w-full h-full opacity-30 group-hover:opacity-50 transition-all" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent" />
-              <div className="absolute bottom-6 left-6">
-                <h2 className="text-2xl font-black text-white uppercase italic">{n.title}</h2>
-              </div>
-            </div>
-            <div className="p-6 grid grid-cols-2 gap-4">
-              {n.tweets?.map((tw, idx) => (
-                <div key={idx} className="bg-[#08080a] p-4 rounded-xl border border-[#111] text-[11px] italic text-[#666]">
-                  <span className="text-[#0055ff] block mb-2 font-bold uppercase">@Siber_Analiz</span>
-                  "{tw}"
-                </div>
-              ))}
-            </div>
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        
+        {/* SOL: OTONOM VERİ AKIŞI */}
+        <nav style={{ width: '320px', borderRight: '1px solid #111', display: 'flex', flexDirection: 'column', background: '#010103' }}>
+          <div style={{ padding: '15px', borderBottom: '1px solid #111', fontSize: '10px', color: '#333', display: 'flex', justifyContent: 'space-between' }}>
+            <span><TrendingUp size={10} /> KÜRESEL_TREND_SÜZGECİ</span>
+            <Activity size={10} />
           </div>
-        ))}
-      </main>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
+            {dataNodes.map((node, i) => (
+              <div 
+                key={i} 
+                onClick={() => setActiveNode(node)}
+                style={{ 
+                  padding: '12px', marginBottom: '8px', border: '1px solid #111', borderRadius: '4px', cursor: 'pointer',
+                  background: activeNode?.title === node.title ? 'rgba(0,85,255,0.05)' : 'transparent',
+                  borderLeft: activeNode?.title === node.title ? '3px solid #0055ff' : '1px solid #111'
+                }}
+              >
+                <div style={{ fontSize: '11px', color: activeNode?.title === node.title ? '#fff' : '#444', fontWeight: 'bold' }}>{node.title}</div>
+              </div>
+            ))}
+          </div>
+        </nav>
 
-      {/* TERMINAL */}
-      <aside className="w-80 border-l border-[#111] bg-black flex flex-col">
-        <div className="p-4 border-b border-[#111] text-[10px] text-[#222] tracking-widest">TERMINAL_SYN_v3</div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 text-[11px]">
-          {logs.map((l, i) => (
-            <div key={i} className={l.r === 'ai' ? 'text-[#0055ff]' : 'text-white'}>
-              <span className="opacity-20">{l.r === 'ai' ? '>> VRTX: ' : '>> SYN: '}</span> {l.t}
-            </div>
-          ))}
-          <div ref={chatEnd} />
-        </div>
-        <form onSubmit={handleChat} className="p-4 border-t border-[#111]">
-          <input value={input} onChange={e => setInput(e.target.value)} placeholder="CMD..." className="w-full bg-[#050505] border border-[#111] p-3 text-[10px] text-white outline-none focus:border-[#0055ff]" />
-        </form>
-      </aside>
+        {/* MERKEZ: ANALİZ VE VİDEO FEED */}
+        <main style={{ flex: 1, position: 'relative', background: '#000' }}>
+          {activeNode && (
+            <>
+              <iframe 
+                src={`https://www.youtube.com/embed/${activeNode.vid}?autoplay=1&mute=1&controls=0&modestbranding=1`} 
+                style={{ width: '100%', height: '100%', border: 'none', opacity: 0.1 }}
+              />
+              <div style={{ position: 'absolute', inset: 0, padding: '60px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', pointerEvents: 'none' }}>
+                <div style={{ maxWidth: '800px', pointerEvents: 'auto' }}>
+                  <ShieldCheck size={40} style={{ color: '#0055ff', marginBottom: '20px' }} />
+                  <h2 style={{ color: '#fff', fontSize: '36px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '20px', letterSpacing: '-1px' }}>{activeNode.title}</h2>
+                  <div style={{ height: '1px', width: '50px', background: '#0055ff', margin: '0 auto 20px auto' }}></div>
+                  <p style={{ color: '#aaa', fontSize: '15px', lineHeight: '1.7', fontStyle: 'italic' }}>{activeNode.analysis}</p>
+                </div>
+              </div>
+            </>
+          )}
+        </nav>
+
+        {/* SAĞ: TERMİNAL */}
+        <aside style={{ width: '300px', borderLeft: '1px solid #111', display: 'flex', flexDirection: 'column', background: '#010103' }}>
+          <div style={{ padding: '15px', borderBottom: '1px solid #111', fontSize: '10px', color: '#222' }}>
+            <Terminal size={12} /> LOG_SYSTEM_SYN
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '15px', fontSize: '11px' }}>
+            {logs.map((log, i) => (
+              <div key={i} style={{ marginBottom: '10px', color: log.r === 'ai' ? '#0055ff' : '#fff' }}>
+                <span style={{ opacity: 0.3 }}>{log.r === 'ai' ? '>> ' : '>> '}</span>{log.t}
+              </div>
+            ))}
+            <div ref={chatEnd} />
+          </div>
+        </nav>
+      </div>
     </div>
   );
 }

@@ -1,32 +1,56 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
+:root {
   --color-vortex-dark: #020617;
   --color-vortex-blue: #2563eb;
   --color-vortex-cyan: #22d3ee;
-  
-  /* Animasyon Tanımları */
-  --animate-spin-slow: spin 20s linear infinite;
-  --animate-reverse-spin: reverse-spin 15s linear infinite;
-
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  @keyframes reverse-spin {
-    from { transform: rotate(360deg); }
-    to { transform: rotate(0deg); }
-  }
-}
-
-:root {
-  background-color: #020617;
-  color: white;
 }
 
 body {
   margin: 0;
+  padding: 0;
+  background-color: var(--color-vortex-dark);
+  color: white;
   min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow: hidden; /* Vortex Radar tam ekran çalışır */
+}
+
+/* Animasyonları v3 formatına çektik */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes reverse-spin {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+.animate-reverse-spin {
+  animation: reverse-spin 15s linear infinite;
+}
+
+/* Scrollbar'ı Vortex temasına uyduruyoruz */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
   background: #020617;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
 }

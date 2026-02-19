@@ -1,109 +1,154 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Radar, Cpu, Rocket, DollarSign, Send, 
+  Volume2, VolumeX, BarChart3, Zap, 
+  MessageCircle, Heart, Repeat2, Play 
+} from 'lucide-react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Sinyal Hattı
+// --- VERİ MATRİSİ ---
+const CATEGORIES = [
+  { id: 'ai', name: 'Artificial Intelligence', icon: <Cpu size={18}/>, color: 'from-blue-600', vid: '9bZkp7q19f0', tweets: [{ id: 1, user: 'Vortex_AI', text: 'SYN için rasyonel veri akışı stabilize edildi.', time: '1m' }] },
+  { id: 'crypto', name: 'Crypto Assets', icon: <DollarSign size={18}/>, color: 'from-orange-600', vid: '0f-jL_mNn_A', tweets: [{ id: 1, user: 'Crypto_Watch', text: 'Piyasa volatilitesi SYN tarafından izleniyor.', time: '5m' }] },
+  { id: 'space', name: 'Space Exploration', icon: <Rocket size={18}/>, color: 'from-purple-600', vid: 'GoW8Tf7h978', tweets: [{ id: 1, user: 'Orbit_News', text: 'Yörünge verileri Vortex terminaline aktarılıyor.', time: '12m' }] }
+];
+
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
 export default function App() {
-  const [trends, setTrends] = useState([
-    { name: "SİNYAL ARANIYOR", vid: "9bZkp7q19f0", opinion: "Vortex küresel veri yollarını kontrol ediyor. SYN yetkisi onaylandı..." }
-  ]);
-  const [active, setActive] = useState(0);
-  const [status, setStatus] = useState("Sistem Başlatılıyor...");
+  const [activeCategory, setActiveCategory] = useState('ai');
+  const [messages, setMessages] = useState([{ role: 'ai', text: "Vortex Nexus çevrimiçi. SYN için rasyonel analiz hazır." }]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const chatEndRef = useRef(null);
 
-  // OTONOM GÜNCELLEME MOTORU (Sitenin Kalbi)
-  const syncVortex = async () => {
+  useEffect(() => { 
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); 
+  }, [messages]);
+
+  const handleChat = async (e) => {
+    e.preventDefault();
+    if (!input.trim() || loading) return;
+
+    const userMsg = input;
+    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setInput('');
+    
     if (!API_KEY) {
-      setStatus("HATA: VITE_ anahtarı bulunamadı.");
+      setMessages(prev => [...prev, { role: 'ai', text: "KRİTİK HATA: API Anahtarı bulunamadı SYN. Vercel panelinden VITE_GEMINI_API_KEY ekle." }]);
       return;
     }
+
+    setLoading(true);
     try {
-      setStatus("Küresel trendler taranıyor...");
       const genAI = new GoogleGenerativeAI(API_KEY);
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
-      const prompt = `Şu an dünyada teknolojiyi etkileyen en önemli 5 gelişmeyi bul. 
-      Sadece bu formatta JSON döndür: [{"name": "BAŞLIK", "vid": "YOUTUBE_ID", "opinion": "YORUM"}]`;
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text().replace(/```json|```/g, "").trim();
-      const data = JSON.parse(text);
-
-      if (Array.isArray(data)) {
-        setTrends(data);
-        setStatus("Sistem Stabil. Her 10 dakikada bir güncelleniyor.");
-      }
+      const result = await model.generateContent(`Sen Vortex AI'sın. Kullanıcın SYN. Rasyonel ve kısa cevap ver. Soru: ${userMsg}`);
+      setMessages(prev => [...prev, { role: 'ai', text: result.response.text() }]);
     } catch (err) {
-      console.error(err);
-      setStatus("Sinyal paraziti oluştu. Yeniden deneniyor...");
+      setMessages(prev => [...prev, { role: 'ai', text: "Sinyal Kesildi: Protokol hatası SYN." }]);
+    } finally { 
+      setLoading(false); 
     }
   };
 
-  useEffect(() => {
-    syncVortex();
-    const timer = setInterval(syncVortex, 600000); // 10 Dakika döngüsü
-    return () => clearInterval(timer);
-  }, []);
+  const current = CATEGORIES.find(c => c.id === activeCategory) || CATEGORIES[0];
 
   return (
-    <div style={{ backgroundColor: '#020205', color: '#444', height: '100vh', fontFamily: 'monospace', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      
-      {/* HEADER: SİSTEM DURUMU */}
-      <header style={{ padding: '15px 25px', borderBottom: '1px solid #111', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#000' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '8px', height: '8px', background: '#0055ff', borderRadius: '50%', boxShadow: '0 0 10px #0055ff' }}></div>
-          <b style={{ color: '#fff', fontSize: '14px', letterSpacing: '2px' }}>VORTEX_NEXUS // SYN</b>
+    <div className="min-h-screen bg-[#050508] text-white flex flex-col font-sans overflow-hidden">
+      {/* HEADER */}
+      <header className="h-16 border-b border-white/10 bg-black/50 backdrop-blur-md flex justify-between items-center px-6 shrink-0">
+        <div className="flex items-center gap-3">
+          <Radar className="text-blue-500 animate-pulse" />
+          <h1 className="font-black italic text-xl tracking-tighter uppercase">Vortex<span className="text-blue-500">Nexus</span></h1>
         </div>
-        <div style={{ fontSize: '9px', color: '#222', letterSpacing: '1px' }}>{status.toUpperCase()}</div>
+        <div className="flex items-center gap-4">
+           <div className="hidden md:block text-[10px] font-mono text-blue-500 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 uppercase tracking-widest">
+            SYN_AUTHORIZED
+           </div>
+           <button onClick={() => setVoiceEnabled(!voiceEnabled)} className="p-2 rounded-full bg-white/5 border border-white/10 text-blue-400">
+            {voiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          </button>
+        </div>
       </header>
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        
-        {/* SOL: OTONOM BAŞLIKLAR (AI TARAFINDAN DEĞİŞTİRİLEN) */}
-        <nav style={{ width: '250px', borderRight: '1px solid #111', padding: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <span style={{ fontSize: '8px', color: '#222', marginBottom: '10px' }}>GLOBAL_RADAR_NODES</span>
-          {trends.map((t, i) => (
-            <div 
-              key={i} 
-              onClick={() => setActive(i)} 
-              style={{ 
-                padding: '12px', fontSize: '10px', cursor: 'pointer', border: '1px solid #111', borderRadius: '4px',
-                color: active === i ? '#fff' : '#333', 
-                background: active === i ? '#0a0a0f' : 'transparent',
-                borderLeft: active === i ? '3px solid #0055ff' : '1px solid #111',
-                transition: '0.3s all'
-              }}>
-              {t.name}
-            </div>
+      <div className="flex-grow flex p-4 gap-4 overflow-hidden">
+        {/* NAV */}
+        <nav className="w-64 hidden lg:flex flex-col gap-2 shrink-0">
+          {CATEGORIES.map(cat => (
+            <button 
+              key={cat.id} 
+              onClick={() => setActiveCategory(cat.id)} 
+              className={`p-4 rounded-2xl flex items-center gap-3 border transition-all ${activeCategory === cat.id ? 'bg-blue-600/20 border-blue-500/50 shadow-2xl shadow-blue-500/10' : 'border-transparent hover:bg-white/5'}`}
+            >
+              <div className={`p-2 rounded-lg bg-gradient-to-br ${cat.color} to-black`}>{cat.icon}</div>
+              <span className="font-bold text-xs uppercase tracking-widest">{cat.name}</span>
+            </button>
           ))}
+          <div className="mt-auto p-4 bg-white/5 border border-white/5 rounded-2xl">
+             <div className="flex items-center gap-2 mb-2"><Zap size={14} className="text-yellow-500" /><span className="text-[10px] font-black uppercase">Core Status</span></div>
+             <div className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500 w-[80%] animate-pulse"></div>
+             </div>
+          </div>
         </nav>
 
-        {/* ORTA: VİDEO VE RASYONEL ANALİZ */}
-        <main style={{ flex: 1, position: 'relative', background: '#000' }}>
-          <iframe 
-            src={`https://www.youtube.com/embed/${trends[active]?.vid}?autoplay=1&mute=1&controls=0&modestbranding=1`} 
-            style={{ width: '100%', height: '100%', border: 'none', opacity: 0.15 }}
-          />
-          <div style={{ position: 'absolute', bottom: '40px', left: '40px', right: '40px', background: 'rgba(0,0,0,0.85)', padding: '30px', border: '1px solid #111', backdropFilter: 'blur(10px)' }}>
-            <div style={{ color: '#0055ff', fontSize: '9px', fontWeight: 'bold', marginBottom: '8px' }}>RASYONEL_ANALIZ_V0.1</div>
-            <h1 style={{ color: '#fff', fontSize: '18px', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{trends[active]?.name}</h1>
-            <p style={{ color: '#888', fontSize: '11px', lineHeight: '1.6', fontStyle: 'italic' }}>"{trends[active]?.opinion}"</p>
+        {/* MAIN FEED */}
+        <main className="flex-grow flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+          <div className="w-full aspect-video bg-black rounded-[32px] overflow-hidden border border-white/10 relative group shadow-2xl shrink-0">
+            <iframe 
+              src={`https://www.youtube.com/embed/${current.vid}?autoplay=1&mute=1&controls=0&modestbranding=1`} 
+              className="w-full h-full opacity-60 pointer-events-none scale-105" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050508] via-transparent to-transparent"></div>
+            <div className="absolute bottom-8 left-8">
+                <h2 className="text-3xl font-black uppercase italic tracking-tighter text-white mb-2">{current.name}</h2>
+                <div className="flex gap-2">
+                  <span className="text-[10px] bg-red-600 px-2 py-0.5 rounded font-bold uppercase">Live Feed</span>
+                  <span className="text-[10px] bg-blue-600 px-2 py-0.5 rounded font-bold uppercase tracking-widest">Stream_ID: {current.id}</span>
+                </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {current.tweets.map(t => (
+              <div key={t.id} className="bg-white/5 border border-white/10 p-5 rounded-[24px] hover:bg-white/[0.08] transition-all">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold shadow-lg shadow-blue-500/20">V</div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-white">@{t.user}</span>
+                    <span className="text-[8px] text-zinc-500 uppercase">{t.time} ago</span>
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-300 leading-relaxed italic">"{t.text}"</p>
+                <div className="flex gap-4 mt-4 text-zinc-600">
+                  <MessageCircle size={14} className="hover:text-blue-500 cursor-pointer" /> 
+                  <Repeat2 size={14} className="hover:text-green-500 cursor-pointer" /> 
+                  <Heart size={14} className="hover:text-red-500 cursor-pointer" />
+                </div>
+              </div>
+            ))}
           </div>
         </main>
 
-        {/* SAĞ: OPERATÖR TERMİNALİ */}
-        <aside style={{ width: '280px', borderLeft: '1px solid #111', background: '#010103', display: 'flex', flexDirection: 'column', padding: '20px' }}>
-           <div style={{ fontSize: '9px', color: '#111', borderBottom: '1px solid #111', paddingBottom: '10px', marginBottom: '15px' }}>AUTH_ID: SYN_OP_V0</div>
-           <div style={{ flex: 1, color: '#0055ff', fontSize: '10px', lineHeight: '1.5' }}>
-              {`> SİSTEM ÇALIŞIYOR... \n> KÜRESEL VERİ AKIŞI AKTİF. \n> HER 10 DAKİKADA BİR GEMİNİ ÜST AKLI KONULARI GÜNCELLEYECEK. \n\n> VORTEX: "Sıradan olanı değil, rasyonel olanı ara SYN."`}
-           </div>
-           <div style={{ borderTop: '1px solid #111', paddingTop: '10px', fontSize: '8px', color: API_KEY ? '#00ff00' : '#ff0000', opacity: 0.3 }}>
-             SIGNAL_{API_KEY ? 'STABLE' : 'LOST'}
-           </div>
-        </aside>
-      </div>
-
-    </div>
-  );
-}
+        {/* AI TERMINAL */}
+        <aside className="w-80 hidden xl:flex flex-col gap-4 shrink-0">
+          <div className="flex-grow bg-black/60 border border-white/10 rounded-[32px] flex flex-col overflow-hidden backdrop-blur-xl">
+            <div className="p-4 border-b border-white/5 flex items-center gap-2 font-black text-[10px] uppercase tracking-widest text-zinc-500">
+              <BarChart3 size={14} className="text-blue-500" /> Terminal_SYN
+            </div>
+            <div className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar">
+              {messages.map((m, i) => (
+                <div key={i} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+                  <div className={`p-3 rounded-2xl text-[11px] leading-relaxed max-w-[90%] ${m.role === 'user' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white/10 border border-white/5 text-zinc-300'}`}>
+                    <div className="text-[7px] uppercase font-black mb-1 opacity-50 tracking-widest">
+                      {m.role === 'user' ? 'Auth: SYN' : 'Vortex_AI'}
+                    </div>
+                    {m.text}
+                  </div>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+            <form onSubmit={handleChat} className="p-4 bg-white/5 border-t border-white/5 flex gap-2">

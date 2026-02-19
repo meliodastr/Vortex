@@ -1,120 +1,119 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Radar, Cpu, Activity, Globe, Terminal, TrendingUp } from 'lucide-react';
+import { Radar, Terminal, AlertTriangle, Search, Activity, Cpu } from 'lucide-react';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
-const TABS = [
-  { id: 'AI', label: 'NEURAL NET', prompt: "Haftalık en önemli 10 Yapay Zeka haberi" },
-  { id: 'KRIPTO', label: 'ASSET MATRIX', prompt: "Haftalık en önemli 10 Kripto Para haberi" },
-  { id: 'TEKNOLOJI', label: 'CORE TECH', prompt: "Haftalık en önemli 10 Teknoloji haberi" }
-];
-
 export default function App() {
-  const [activeTab, setActiveTab] = useState('AI');
-  const [nodes, setNodes] = useState([]);
-  const [activeNode, setActiveNode] = useState(null);
-  const [logs, setLogs] = useState([{ r: 'ai', t: "VORTEX_v7.2: Son sinyal taraması başlatıldı. SYN bekleniyor." }]);
+  const [logs, setLogs] = useState([{ t: "VORTEX_DIAGNOSTIC: Sistem otopsisi başlatıldı.", c: "#0055ff" }]);
+  const [diagnosis, setDiagnosis] = useState("Sinyal taranıyor...");
   const [loading, setLoading] = useState(false);
   const chatEnd = useRef(null);
 
-  const fetchContent = async (tabId) => {
-    if (!API_KEY) {
-      setLogs(prev => [...prev, { r: 'ai', t: "HATA: API_KEY algılanamadı." }]);
+  const runDiagnostic = async () => {
+    setLoading(true);
+    setLogs(prev => [...prev, { t: "ADIM 1: API Anahtarı varlığı kontrol ediliyor...", c: "#888" }]);
+
+    if (!API_KEY || API_KEY.length < 10) {
+      setDiagnosis("HATA: API Anahtarı (VITE_GEMINI_API_KEY) Vercel'de bulunamadı veya çok kısa.");
+      setLogs(prev => [...prev, { t: "KRİTİK: Anahtar eksik!", c: "#ff0000" }]);
+      setLoading(false);
       return;
     }
-    setLoading(true);
+
+    setLogs(prev => [...prev, { t: "ADIM 2: Google servislerine el sıkışma isteği gönderiliyor...", c: "#888" }]);
+    
     try {
       const genAI = new GoogleGenerativeAI(API_KEY);
       
-      // ÇÖZÜM: En genel ve kabul gören model ismine geri dönüş
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
-      const target = TABS.find(t => t.id === tabId);
-      const prompt = `Lütfen şu konu hakkında dünya gündeminden 10 başlık seç: ${target.prompt}. 
-      SADECE bu JSON formatında yanıt ver: [{"title": "Haber Başlığı", "vid": "Konuyla ilgili kısa arama terimi", "analysis": "Rasyonel ve derin analiz"}]`;
+      // TÜM MODELLERİ TEST ETME DÖNGÜSÜ
+      const testModels = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
+      let success = false;
 
-      const result = await model.generateContent(prompt);
-      const responseText = result.response.text();
-      
-      const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        const cleanData = JSON.parse(jsonMatch[0]);
-        setNodes(cleanData);
-        setActiveNode(cleanData[0]);
-        setLogs(prev => [...prev, { r: 'ai', t: `${tabId} hattı başarıyla bağlandı.` }]);
-      } else {
-        throw new Error("VERİ_AYRIŞTIRMA_HATASI");
+      for (const modelName of testModels) {
+        setLogs(prev => [...prev, { t: `DENE: ${modelName} test ediliyor...`, c: "#555" }]);
+        try {
+          const model = genAI.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent("test");
+          if (result) {
+            setDiagnosis(`BAŞARI: ${modelName} yanıt verdi! Sistem bu modelle çalışabilir.`);
+            setLogs(prev => [...prev, { t: `BULUNDU: ${modelName} aktif!`, c: "#00ff00" }]);
+            success = true;
+            break;
+          }
+        } catch (err) {
+          setLogs(prev => [...prev, { t: `${modelName} başarısız: ${err.message.substring(0, 40)}`, c: "#333" }]);
+        }
       }
+
+      if (!success) {
+        throw new Error("Tüm modeller 404 veya 403 döndürdü.");
+      }
+
     } catch (e) {
       console.error(e);
-      // Detaylı hata mesajı analizi
-      const errorMsg = e.message.includes('404') ? "Model Hala Bulunamıyor (İsim Çatışması)" : e.message;
-      setLogs(prev => [...prev, { r: 'ai', t: `SİNYAL_HATASI: ${errorMsg}` }]);
-    } finally { setLoading(false); }
+      let advice = "ÖNERİ: ";
+      if (e.message.includes("404")) advice += "Model ismi uyumsuz. Google Cloud panelinden 'Generative Language API' etkin mi kontrol et.";
+      if (e.message.includes("403")) advice += "API Anahtarı kısıtlanmış veya geçersiz. AI Studio'dan yeni bir anahtar al.";
+      if (e.message.includes("429")) advice += "Kota doldu. Birkaç dakika bekle.";
+      
+      setDiagnosis(`TEŞHİS: ${e.message}`);
+      setLogs(prev => [...prev, { t: advice, c: "#ffaa00" }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchContent(activeTab); }, [activeTab]);
+  useEffect(() => { runDiagnostic(); }, []);
   useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]);
 
   return (
-    <div style={{ backgroundColor: '#020205', color: '#fff', height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
+    <div style={{ backgroundColor: '#020205', color: '#fff', height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'monospace' }}>
       
-      <header style={{ padding: '20px 40px', borderBottom: '1px solid #111', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#000' }}>
+      <header style={{ padding: '20px 40px', borderBottom: '1px solid #222', background: '#000', display: 'flex', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <Radar color="#0055ff" size={24} className={loading ? 'animate-pulse' : ''} />
-          <h1 style={{ letterSpacing: '8px', fontWeight: '900', margin: 0 }}>VORTEX</h1>
+          <Radar color={loading ? "#00ff00" : "#0055ff"} className={loading ? "animate-pulse" : ""} />
+          <h1 style={{ letterSpacing: '5px', fontWeight: '900', fontSize: '18px' }}>VORTEX_OtoTanı</h1>
         </div>
-        <nav style={{ display: 'flex', background: '#0a0a0a', padding: '5px', borderRadius: '10px', gap: '5px' }}>
-          {TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ 
-              background: activeTab === tab.id ? '#111' : 'transparent', color: activeTab === tab.id ? '#0055ff' : '#444', 
-              border: 'none', padding: '10px 25px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: 'bold'
-            }}>
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-        <div style={{ fontSize: '10px', color: '#333' }}>ID: SYN_AUTHORITY</div>
+        <button onClick={runDiagnostic} style={{ background: '#0055ff', color: '#fff', border: 'none', padding: '5px 15px', cursor: 'pointer', borderRadius: '4px', fontSize: '10px' }}>YENİDEN TARA</button>
       </header>
 
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <main style={{ flex: 1, display: 'flex', padding: '40px', gap: '40px' }}>
         
-        <aside style={{ width: '380px', borderRight: '1px solid #111', overflowY: 'auto', padding: '20px', background: '#010103' }}>
-          {nodes.map((n, i) => (
-            <div key={i} onClick={() => setActiveNode(n)} style={{ 
-              padding: '20px', marginBottom: '15px', border: '1px solid #111', borderRadius: '12px', cursor: 'pointer',
-              background: activeNode?.title === n.title ? '#080815' : 'transparent',
-              borderColor: activeNode?.title === n.title ? '#0055ff' : '#111'
-            }}>
-              <div style={{ fontSize: '13px', fontWeight: 'bold', color: activeNode?.title === n.title ? '#fff' : '#555' }}>{n.title}</div>
-            </div>
-          ))}
-        </aside>
+        {/* SOL: TANILAMA EKRANI */}
+        <div style={{ flex: 1, background: '#050508', border: '1px solid #111', borderRadius: '12px', padding: '30px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px', color: '#ffaa00' }}>
+            <AlertTriangle size={30} />
+            <span style={{ fontWeight: 'bold', fontSize: '20px' }}>SİSTEM DURUMU</span>
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', color: diagnosis.includes('BAŞARI') ? '#00ff00' : '#fff', lineHeight: '1.4' }}>
+            {diagnosis}
+          </div>
+          <div style={{ marginTop: '40px', padding: '20px', background: '#000', borderRadius: '8px', border: '1px solid #222', color: '#666', fontSize: '13px' }}>
+            <Search size={14} /> <b>Analiz:</b> Sistem şu an Google'ın API uç noktalarını tek tek deniyor. Eğer 404 alıyorsan, bu modelin senin bölgen veya anahtarın için henüz aktif olmadığını gösterir.
+          </div>
+        </div>
 
-        <main style={{ flex: 1, position: 'relative', background: '#000' }}>
-          {activeNode && (
-            <div style={{ height: '100%', position: 'relative' }}>
-              <iframe src={`https://www.youtube.com/embed?listType=search&list=${activeNode.title}&autoplay=1&mute=1&controls=0`} style={{ width: '100%', height: '100%', border: 'none', opacity: 0.1 }} />
-              <div style={{ position: 'absolute', inset: 0, padding: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <h2 style={{ fontSize: '56px', fontWeight: '900', marginBottom: '30px', color: '#fff', textTransform: 'uppercase' }}>{activeNode.title}</h2>
-                <p style={{ color: '#aaa', fontSize: '20px', maxWidth: '800px', lineHeight: '1.6' }}>{activeNode.analysis}</p>
-              </div>
-            </div>
-          )}
-        </main>
-
-        <aside style={{ width: '320px', borderLeft: '1px solid #111', display: 'flex', flexDirection: 'column', background: '#050505' }}>
-          <div style={{ padding: '20px', borderBottom: '1px solid #111', fontSize: '10px', color: '#222' }}>CORE_LOGS</div>
-          <div style={{ flex: 1, padding: '20px', fontSize: '11px', overflowY: 'auto' }}>
+        {/* SAĞ: CANLI LOGLAR */}
+        <aside style={{ width: '450px', background: '#000', border: '1px solid #111', borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '15px', borderBottom: '1px solid #111', fontSize: '10px', color: '#333' }}>
+            <Terminal size={14} /> RAW_DEBUG_STREAM
+          </div>
+          <div style={{ flex: 1, padding: '20px', overflowY: 'auto', fontSize: '12px' }}>
             {logs.map((log, i) => (
-              <div key={i} style={{ color: log.r === 'ai' ? '#0055ff' : '#fff', marginBottom: '10px' }}>{'>'} {log.t}</div>
+              <div key={i} style={{ color: log.c, marginBottom: '8px' }}>
+                <span style={{ opacity: 0.2 }}>[{i}]</span> {log.t}
+              </div>
             ))}
             <div ref={chatEnd} />
           </div>
         </aside>
 
-      </div>
+      </main>
+
+      <footer style={{ padding: '10px 40px', borderTop: '1px solid #111', fontSize: '9px', color: '#222', textAlign: 'center' }}>
+        SYN_AUTHORITY_DEBUG_MODE_v8.0
+      </footer>
     </div>
   );
 }

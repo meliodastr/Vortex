@@ -1,88 +1,70 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Radar, Cpu, Activity, Globe, Terminal, TrendingUp, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { generateText } from 'ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { Radar, Terminal, Activity, Zap } from 'lucide-react';
 
-// API ANAHTARI KONTROLÜ
+// API ANAHTARI
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
-const TABS = [
-  { id: 'AI', label: 'NEURAL NET', prompt: "AI dünyasındaki 10 kritik haber" },
-  { id: 'KRIPTO', label: 'ASSET MATRIX', prompt: "Kripto piyasasındaki 10 önemli gelişme" },
-  { id: 'TEKNOLOJI', label: 'CORE TECH', prompt: "Gelecek teknolojileri üzerine 10 başlık" }
-];
-
 export default function App() {
-  const [activeTab, setActiveTab] = useState('AI');
   const [nodes, setNodes] = useState([]);
-  const [activeNode, setActiveNode] = useState(null);
-  const [logs, setLogs] = useState([{ r: 'ai', t: "VORTEX_v9.2: Build stabilize edildi. Sinyal bekleniyor." }]);
   const [loading, setLoading] = useState(false);
-  const chatEnd = useRef(null);
+  const [log, setLog] = useState("VORTEX_v10: Beklemede...");
 
-  const fetchVortex = async (tabId) => {
+  // Google AI Sağlayıcısını Yapılandır
+  const google = createGoogleGenerativeAI({
+    apiKey: API_KEY,
+  });
+
+  const fetchVortex = async () => {
     if (!API_KEY) {
-      setLogs(prev => [...prev, { r: 'ai', t: "UYARI: VITE_GEMINI_API_KEY eksik. Vercel ayarlarını kontrol et." }]);
+      setLog("HATA: VITE_GEMINI_API_KEY bulunamadı!");
       return;
     }
+    
     setLoading(true);
-    try {
-      const genAI = new GoogleGenerativeAI(API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const target = TABS.find(t => t.id === tabId);
-      const prompt = `Analiz et ve sadece JSON listesi döndür: ${target.prompt}. Format: [{"t": "Başlık", "v": "YouTubeArama", "a": "Analiz"}]`;
+    setLog("Sinyal taranıyor...");
 
-      const result = await model.generateContent(prompt);
-      const response = result.response.text();
-      const jsonMatch = response.match(/\[[\s\S]*\]/);
-      
-      if (jsonMatch) {
-        const cleanData = JSON.parse(jsonMatch[0]);
-        setNodes(cleanData);
-        setActiveNode(cleanData[0]);
-        setLogs(prev => [...prev, { r: 'ai', t: `${tabId} verisi başarıyla süzüldü.` }]);
-      }
+    try {
+      const { text } = await generateText({
+        model: google('gemini-1.5-flash'),
+        prompt: 'Dünya gündeminden 5 teknoloji haberi seç. Sadece şu formatta JSON döndür: [{"title": "Başlık", "desc": "Analiz"}]',
+      });
+
+      // Gelen metni JSON'a çevir
+      const cleanJson = JSON.parse(text.match(/\[.*\]/s)[0]);
+      setNodes(cleanJson);
+      setLog("Sinyal stabilize edildi.");
     } catch (e) {
-      setLogs(prev => [...prev, { r: 'ai', t: "SİNYAL HATASI: Bağlantı kurulamadı." }]);
+      console.error(e);
+      setLog(`Sinyal Kesintisi: ${e.message.substring(0, 30)}`);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchVortex(activeTab); }, [activeTab]);
-  useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]);
+  useEffect(() => { fetchVortex(); }, []);
 
   return (
-    <div style={{ backgroundColor: '#000', color: '#fff', height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', overflow: 'hidden' }}>
-      
-      {/* ÜST PANEL */}
-      <header style={{ height: '70px', borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', padding: '0 30px', justifyContent: 'space-between', background: '#050505' }}>
+    <div style={{ background: '#000', color: '#fff', height: '100vh', fontFamily: 'sans-serif' }}>
+      <header style={{ padding: '20px 40px', borderBottom: '1px solid #111', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <Radar size={24} color="#0055ff" className={loading ? "animate-pulse" : ""} />
-          <h1 style={{ letterSpacing: '5px', fontWeight: '900', margin: 0 }}>VORTEX</h1>
+          <Radar color="#0055ff" className={loading ? 'animate-pulse' : ''} />
+          <h1 style={{ letterSpacing: '5px', fontSize: '20px' }}>VORTEX SDK</h1>
         </div>
-        <nav style={{ display: 'flex', gap: '10px' }}>
-          {TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ background: activeTab === tab.id ? '#0055ff' : '#111', color: '#fff', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontSize: '11px' }}>
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+        <div style={{ fontSize: '10px', color: '#444' }}>{log}</div>
       </header>
 
-      {/* ANA GÖVDE */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        
-        {/* SOL LİSTE */}
-        <aside style={{ width: '320px', borderRight: '1px solid #111', overflowY: 'auto', padding: '15px' }}>
-          {nodes.map((n, i) => (
-            <div key={i} onClick={() => setActiveNode(n)} style={{ padding: '15px', marginBottom: '10px', border: '1px solid #111', borderRadius: '8px', cursor: 'pointer', background: activeNode?.t === n.t ? '#0a0a20' : 'transparent', borderColor: activeNode?.t === n.t ? '#0055ff' : '#111' }}>
-              <div style={{ fontSize: '12px', fontWeight: 'bold' }}>{n.t}</div>
-            </div>
-          ))}
-        </aside>
-
-        {/* MERKEZ GÖRÜNÜM */}
-        <main style={{ flex: 1, position: 'relative', background: '#020202' }}>
-          {activeNode && (
-            <div style={{ padding: '60px' }}>
-              <h2 style={{ fontSize: '48px', fontWeight: '900', marginBottom: '20px
+      <main style={{ padding: '40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+        {nodes.map((n, i) => (
+          <div key={i} style={{ padding: '20px', border: '1px solid #111', borderRadius: '12px', background: '#050505' }}>
+            <div style={{ color: '#0055ff', fontSize: '10px', marginBottom: '10px' }}> <Zap size={10} /> LIVE_FEED</div>
+            <h3 style={{ fontSize: '18px', marginBottom: '10px' }}>{n.title}</h3>
+            <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.5' }}>{n.desc}</p>
+          </div>
+        ))}
+        {loading && <div style={{ color: '#0055ff' }}>Veri süzülüyor...</div>}
+      </main>
+    </div>
+  );
+}

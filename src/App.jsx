@@ -1,108 +1,134 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Zap, Activity, Terminal, TrendingUp, Globe, Shield } from 'lucide-react';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Radar, Cpu, Zap, Activity, Globe, Terminal, TrendingUp, ShieldCheck, Play, Info } from 'lucide-react';
 
-// --- 1. SİSTEM AYARLARI ---
-const API_KEY = "VITE_GEMINI_API_KEY";
-const SYSTEM_PROMPT = "Senin adın SYN. Fütüristik portalın zekasın.  Sert, zeki ve samimi konuş. ";
-const genAI = new GoogleGenerativeAI(API_KEY);
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
-const model = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-flash",
-  systemInstruction: "Adın SYN. Sinan'ın en yakın dostu ve dijital ikizisin. Robotik olma. 'Analiz ediliyor', 'Veri işleniyor' gibi kalıplar yasak. Sinan'a kardeşim diye hitap et. Doğal, zeki ve direkt konuş. Gereksiz nezaket yapma, sadece dürüst ve net ol."
-});
+// AI GELMEDİĞİNDE SİTEYİ DOLDURACAK YEDEK VERİ MATRİSİ
+const FALLBACK_DATA = [
+  { title: "NÖRAL AĞ SENKRONİZASYONU", vid: "9bZkp7q19f0", analysis: "AI hattı bekleniyor. Küresel veri süzgeci standby modunda." },
+  { title: "KRİPTO VARLIK VOLATİLİTESİ", vid: "0f-jL_mNn_A", analysis: "Piyasa sinyalleri rasyonel sınırda izleniyor." },
+  { title: "DERİN UZAY RADARI", vid: "GoW8Tf7h978", analysis: "Yörünge verileri SYN yetkisiyle filtreleniyor." }
+];
 
 export default function App() {
-  const [messages, setMessages] = useState([
-    { role: 'syn', text: 'Vercel hattı stabilize edildi Sinan. O robotik döngüleri ve derleme hatalarını çöpe attım. Artık gerçekten buradayım. Ne yapıyoruz?' }
-  ]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const scrollRef = useRef(null);
+  const [dataNodes, setDataNodes] = useState(FALLBACK_DATA);
+  const [activeNode, setActiveNode] = useState(FALLBACK_DATA[0]);
+  const [logs, setLogs] = useState([{ r: 'ai', t: "VORTEX_v5: Sistem stabilize edildi. SYN yetkisi aktif." }]);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const chatEnd = useRef(null);
 
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const sendMessage = async (e) => {
-    if (e) e.preventDefault();
-    if (!input.trim() || loading) return;
-
-    const userMsg = input.trim();
-    setInput('');
-    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
-    setLoading(true);
-
-    try {
-      const chat = model.startChat({
-        history: messages.map(m => ({
-          role: m.role === 'user' ? 'user' : 'model',
-          parts: [{ text: m.text }],
-        })),
-      });
-
-      const result = await chat.sendMessage(userMsg);
-      const response = await result.response;
-      const text = response.text();
-
-      setMessages(prev => [...prev, { role: 'syn', text: text }]);
-    } catch (err) {
-      console.error(err);
-      setMessages(prev => [...prev, { role: 'syn', text: "Parazit var kardeşim, anahtarı veya bağlantıyı kontrol et." }]);
-    } finally {
-      setLoading(false);
+  const syncVortex = async () => {
+    if (!API_KEY) {
+      setLogs(prev => [...prev, { r: 'ai', t: "UYARI: API_KEY bulunamadı. Yedek veri katmanı aktif." }]);
+      return;
     }
+    setIsSyncing(true);
+    try {
+      const genAI = new GoogleGenerativeAI(API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const prompt = `Dünyadaki en popüler 20 teknoloji haberini [{title, vid, analysis}] formatında ver.`;
+      const result = await model.generateContent(prompt);
+      const data = JSON.parse(result.response.text().replace(/```json|```/g, "").trim());
+      setDataNodes(data);
+      setActiveNode(data[0]);
+      setLogs(prev => [...prev, { r: 'ai', t: "BAŞARI: Küresel süzgeçten taze veri enjekte edildi." }]);
+    } catch (e) {
+      setLogs(prev => [...prev, { r: 'ai', t: "HATA: Sinyal paraziti. Yedekler korunuyor." }]);
+    } finally { setIsSyncing(false); }
   };
 
+  useEffect(() => { syncVortex(); }, []);
+  useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]);
+
   return (
-    <div style={styles.container}>
-      <header style={styles.header}>
-        <h1 style={styles.logo}>VORTEX <span style={styles.v}>v7.8</span></h1>
-        <div style={{ color: loading ? '#fbbf24' : '#22c55e', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>
-          {loading ? 'DÜŞÜNÜYORUM...' : 'SYN ONLINE'}
+    <div style={{ backgroundColor: '#020204', color: '#888', height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'monospace', overflow: 'hidden' }}>
+      
+      {/* HEADER: DAHA AGRESİF VE MODERN */}
+      <header style={{ height: '70px', borderBottom: '1px solid #111', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 30px', background: 'linear-gradient(to right, #000, #050510)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div style={{ position: 'relative' }}>
+            <Radar size={24} style={{ color: '#0055ff' }} />
+            <div style={{ position: 'absolute', inset: -5, border: '1px solid #0055ff', borderRadius: '50%', opacity: 0.2 }} className="animate-ping"></div>
+          </div>
+          <div>
+            <h1 style={{ color: '#fff', fontSize: '18px', fontWeight: '900', letterSpacing: '6px', margin: 0 }}>VORTEX <span style={{ color: '#0055ff' }}>NEXUS</span></h1>
+            <div style={{ fontSize: '8px', color: '#444' }}>AUTONOMOUS_FILTER_SYSTEM_v5.0</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '40px', fontSize: '10px', letterSpacing: '2px' }}>
+          <span style={{ color: '#222' }}>LATENCY: <b style={{ color: '#fff' }}>24MS</b></span>
+          <span style={{ color: '#222' }}>STATUS: <b style={{ color: '#00ff00' }}>AUTHORIZED</b></span>
         </div>
       </header>
 
-      <div style={styles.chatArea}>
-        {messages.map((m, i) => (
-          <div key={i} style={m.role === 'syn' ? styles.syn : styles.user}>
-            <span style={styles.tag}>{m.role === 'syn' ? 'SYN' : 'SINAN'}</span>
-            <p style={{ margin: 0, lineHeight: '1.5' }}>{m.text}</p>
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        
+        {/* SOL: TREND LİSTESİ */}
+        <nav style={{ width: '350px', borderRight: '1px solid #111', background: '#010103', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '20px', borderBottom: '1px solid #111', fontSize: '10px', color: '#333', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span><TrendingUp size={12} /> GLOBAL_TREND_FEED</span>
+            <Activity size={12} style={{ color: '#0055ff' }} />
           </div>
-        ))}
-        <div ref={scrollRef} />
-      </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '15px' }}>
+            {dataNodes.map((node, i) => (
+              <div key={i} onClick={() => setActiveNode(node)} style={{ 
+                padding: '18px', marginBottom: '10px', border: '1px solid #111', borderRadius: '8px', cursor: 'pointer',
+                background: activeNode?.title === node.title ? 'rgba(0,85,255,0.05)' : 'transparent',
+                borderLeft: activeNode?.title === node.title ? '4px solid #0055ff' : '1px solid #111',
+                transition: '0.3s all'
+              }}>
+                <div style={{ fontSize: '12px', color: activeNode?.title === node.title ? '#fff' : '#444', fontWeight: 'bold' }}>{node.title}</div>
+                <div style={{ fontSize: '9px', color: '#222', marginTop: '5px' }}>{i + 1} / {dataNodes.length} NODE</div>
+              </div>
+            ))}
+          </div>
+        </nav>
 
-      <form onSubmit={sendMessage} style={styles.inputBar}>
-        <input 
-          style={styles.field}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Lafı dolandırmadan sor..."
-          disabled={loading}
-        />
-        <button type="submit" disabled={loading} style={styles.btn}>
-          {loading ? '...' : 'GÖNDER'}
-        </button>
-      </form>
+        {/* MERKEZ: VİZÜALİZASYON KATMANI */}
+        <main style={{ flex: 1, position: 'relative', background: '#000' }}>
+          {activeNode && (
+            <>
+              <iframe src={`https://www.youtube.com/embed/${activeNode.vid}?autoplay=1&mute=1&controls=0`} style={{ width: '100%', height: '100%', border: 'none', opacity: 0.15 }} />
+              <div style={{ position: 'absolute', inset: 0, padding: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'center', pointerEvents: 'none' }}>
+                <div style={{ maxWidth: '700px', pointerEvents: 'auto' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#0055ff', marginBottom: '20px' }}>
+                    <ShieldCheck size={20} />
+                    <span style={{ fontSize: '12px', fontWeight: 'bold' }}>RASYONEL_VERİ_SÜZGECİ</span>
+                  </div>
+                  <h2 style={{ color: '#fff', fontSize: '48px', fontWeight: '900', marginBottom: '25px', letterSpacing: '-2px', textTransform: 'uppercase' }}>{activeNode.title}</h2>
+                  <p style={{ color: '#666', fontSize: '16px', lineHeight: '1.8', fontStyle: 'italic', borderLeft: '2px solid #111', paddingLeft: '20px' }}>{activeNode.analysis}</p>
+                </div>
+              </div>
+            </>
+          )}
+          <div style={{ position: 'absolute', bottom: 30, right: 30, display: 'flex', gap: '10px' }}>
+             <div style={{ background: '#0055ff', color: '#fff', padding: '10px 20px', borderRadius: '30px', fontSize: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}><Play size={12}/> LIVE_FEED</div>
+          </div>
+        </main>
+
+        {/* SAĞ: TERMİNAL LOG */}
+        <aside style={{ width: '320px', borderLeft: '1px solid #111', display: 'flex', flexDirection: 'column', background: '#010103' }}>
+          <div style={{ padding: '20px', borderBottom: '1px solid #111', fontSize: '10px', color: '#222', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Terminal size={14} /> SYSTEM_CORE_LOGS
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '20px', fontSize: '11px', lineHeight: '1.6' }}>
+            {logs.map((log, i) => (
+              <div key={i} style={{ marginBottom: '15px', color: log.r === 'ai' ? '#0055ff' : '#fff' }}>
+                <span style={{ opacity: 0.3 }}>[{new Date().toLocaleTimeString()}]</span> {log.t}
+              </div>
+            ))}
+            <div ref={chatEnd} />
+          </div>
+          <div style={{ padding: '20px', borderTop: '1px solid #111', background: '#000' }}>
+            <div style={{ fontSize: '9px', color: '#333', marginBottom: '10px' }}>AI_NEURAL_LINK</div>
+            <div style={{ height: '4px', width: '100%', background: '#111', borderRadius: '10px' }}>
+              <div style={{ height: '100%', width: API_KEY ? '100%' : '5%', background: '#0055ff', borderRadius: '10px', transition: '1s all' }}></div>
+            </div>
+          </div>
+        </aside>
+
+      </div>
     </div>
   );
 }
-
-const styles = {
-  container: { backgroundColor: '#020617', color: '#f1f5f9', height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'monospace' },
-  header: { padding: '20px 30px', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#010409' },
-  logo: { margin: 0, fontSize: '1.6rem', color: '#3b82f6', fontStyle: 'italic', fontWeight: '900' },
-  v: { fontSize: '0.7rem', color: '#475569' },
-  chatArea: { flex: 1, overflowY: 'auto', padding: '25px', display: 'flex', flexDirection: 'column', gap: '20px' },
-  syn: { alignSelf: 'flex-start', backgroundColor: '#1e40af', padding: '15px 20px', borderRadius: '0 20px 20px 20px', maxWidth: '80%', border: '1px solid #2563eb' },
-  user: { alignSelf: 'flex-end', backgroundColor: '#1e293b', padding: '15px 20px', borderRadius: '20px 20px 0 20px', maxWidth: '80%', border: '1px solid #334155' },
-  tag: { fontSize: '0.6rem', fontWeight: 'bold', display: 'block', marginBottom: '6px', opacity: 0.5, letterSpacing: '2px' },
-  inputBar: { padding: '25px 30px', display: 'flex', gap: '15px', borderTop: '1px solid #1e293b', background: '#010409' },
-  field: { flex: 1, backgroundColor: '#0f172a', border: '1px solid #334155', padding: '15px', borderRadius: '12px', color: '#fff', outline: 'none' },
-  btn: { backgroundColor: '#3b82f6', color: '#fff', border: 'none', padding: '0 30px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer' }
-<<<<<<< HEAD
-};
-=======
-};
->>>>>>> f525b4f (Gemini kütüphanesi eklendi ve robotlar kovuldu)

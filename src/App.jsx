@@ -1,73 +1,108 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { Radar, Activity } from 'lucide-react';
+import { Radar, Activity, MessageSquare, BarChart3, Send, Cpu } from 'lucide-react';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
 export default function App() {
-  const [nodes, setNodes] = useState([]);
+  const [analysis, setAnalysis] = useState([]);
+  const [chat, setChat] = useState([{ role: 'ai', text: 'VORTEX 3.1 Çekirdek bağlantısı aktif. Analiz ve sohbet modülleri hazır.' }]);
+  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [logs, setLogs] = useState([{ t: "VORTEX_v16: Sinyal Hattı Açıldı.", c: "#0055ff" }]);
+  const [logs, setLogs] = useState([{ t: "Sinyal Stabil: Gemini 3.1 Pro Online.", c: "#00ff00" }]);
   const chatEnd = useRef(null);
 
   const google = createGoogleGenerativeAI({ apiKey: API_KEY });
 
-  const fetchVortex = async () => {
-    if (!API_KEY) {
-      setLogs(p => [...p, { t: "KRİTİK: API Anahtarı Bulunamadı!", c: "#ff0000" }]);
-      return;
-    }
+  // ANALİZ MODÜLÜ: Otomatik haber/veri çekme
+  const fetchAnalysis = async () => {
+    try {
+      const { text } = await generateText({
+        model: google('gemini-3.1-pro-preview'),
+        prompt: 'Teknoloji dünyasından 3 kritik madde. JSON: [{"t": "Başlık", "a": "Analiz"}]',
+      });
+      const match = text.match(/\[.*\]/s);
+      if (match) setAnalysis(JSON.parse(match[0]));
+    } catch (e) { console.error(e); }
+  };
 
+  // SOHBET MODÜLÜ: Seninle konuşan AI
+  const handleChat = async (e) => {
+    e.preventDefault();
+    if (!input || loading) return;
+
+    const userMsg = input;
+    setChat(p => [...p, { role: 'user', text: userMsg }]);
+    setInput('');
     setLoading(true);
-    setLogs(p => [...p, { t: "Gemini 3.1 Pro Bağlantısı Aranıyor...", c: "#888" }]);
 
     try {
       const { text } = await generateText({
-        // Dokümandaki en güncel model ismi - 404'ü bu isim çözer
-        model: google('gemini-3-flash-preview'), 
-        prompt: 'Teknoloji dünyasından 5 kısa gelişme ver. JSON formatı: [{"t": "Başlık", "a": "Analiz"}]',
+        model: google('gemini-3.1-pro-preview'),
+        prompt: userMsg,
       });
-
-      const jsonMatch = text.match(/\[.*\]/s);
-      if (jsonMatch) {
-        setNodes(JSON.parse(jsonMatch[0]));
-        setLogs(p => [...p, { t: "SİNYAL STABİL: Veri akışı başladı.", c: "#00ff00" }]);
-      }
+      setChat(p => [...p, { role: 'ai', text }]);
     } catch (e) {
-      setLogs(p => [...p, { t: `404/ERİŞİM HATASI: Model ismi güncelleniyor...`, c: "#ffaa00" }]);
-    } finally {
-      setLoading(false);
-    }
+      setChat(p => [...p, { role: 'ai', text: 'Sinyal kesintisi: ' + e.message }]);
+    } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchVortex(); }, []);
-  useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]);
+  useEffect(() => { fetchAnalysis(); }, []);
+  useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [chat]);
 
   return (
     <div style={{ background: '#020205', color: '#fff', height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'monospace' }}>
-      <header style={{ height: '70px', borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', padding: '0 30px', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Radar size={22} color="#0055ff" className={loading ? "animate-pulse" : ""} />
-          <h1 style={{ letterSpacing: '5px', fontWeight: '900' }}>VORTEX CORE</h1>
+      {/* HEADER */}
+      <header style={{ height: '60px', borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', padding: '0 25px', justifyContent: 'space-between', background: '#000' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Cpu size={20} color="#0055ff" />
+          <h1 style={{ letterSpacing: '4px', fontWeight: '900' }}>VORTEX 3.1</h1>
         </div>
-        <div style={{ fontSize: '10px', color: '#444' }}>ENGINE: GEMINI 3.1 // STATUS: ONLINE</div>
+        <div style={{ fontSize: '10px', color: '#444' }}>MODEL: GEMINI 3.1 PRO // OP: SYN</div>
       </header>
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        <main style={{ flex: 1, padding: '30px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-          {nodes.map((n, i) => (
-            <div key={i} style={{ padding: '20px', background: '#05050a', border: '1px solid #111', borderRadius: '10px', borderLeft: '3px solid #0055ff' }}>
-              <div style={{ color: '#0055ff', fontSize: '10px', marginBottom: '10px' }}> <Activity size={12} /> NEURAL_NODE_{i+1}</div>
-              <h3 style={{ fontSize: '17px', marginBottom: '10px' }}>{n.t}</h3>
-              <p style={{ color: '#666', fontSize: '13px' }}>{n.a}</p>
+        {/* SOL: ANALİZ PENCERESİ */}
+        <section style={{ flex: 1, borderRight: '1px solid #111', padding: '20px', overflowY: 'auto' }}>
+          <div style={{ color: '#0055ff', fontSize: '12px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <BarChart3 size={16} /> CANLI VERİ ANALİZİ
+          </div>
+          {analysis.map((n, i) => (
+            <div key={i} style={{ padding: '15px', background: '#05050a', border: '1px solid #111', borderRadius: '8px', marginBottom: '15px' }}>
+              <h3 style={{ fontSize: '15px', color: '#00ff00', marginBottom: '8px' }}>{n.t}</h3>
+              <p style={{ color: '#888', fontSize: '13px' }}>{n.a}</p>
             </div>
           ))}
-        </main>
-        <aside style={{ width: '280px', borderLeft: '1px solid #111', background: '#010103', padding: '15px', overflowY: 'auto' }}>
-          {logs.map((l, i) => <div key={i} style={{ color: l.c, marginBottom: '8px', fontSize: '11px' }}>{'>'} {l.t}</div>)}
-          <div ref={chatEnd} />
-        </aside>
+        </section>
+
+        {/* SAĞ: SOHBET PENCERESİ */}
+        <section style={{ width: '450px', display: 'flex', flexDirection: 'column', background: '#010103' }}>
+          <div style={{ padding: '15px', borderBottom: '1px solid #111', color: '#0055ff', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <MessageSquare size={16} /> CORE_COMMUNICATIONS
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+            {chat.map((m, i) => (
+              <div key={i} style={{ marginBottom: '15px', textAlign: m.role === 'user' ? 'right' : 'left' }}>
+                <div style={{ fontSize: '10px', color: '#333', marginBottom: '4px' }}>{m.role.toUpperCase()}</div>
+                <div style={{ display: 'inline-block', padding: '10px', borderRadius: '8px', background: m.role === 'user' ? '#0055ff' : '#0a0a10', maxWidth: '85%', fontSize: '13px', border: m.role === 'ai' ? '1px solid #111' : 'none' }}>
+                  {m.text}
+                </div>
+              </div>
+            ))}
+            <div ref={chatEnd} />
+          </div>
+          <form onSubmit={handleChat} style={{ padding: '15px', borderTop: '1px solid #111', display: 'flex', gap: '10px' }}>
+            <input 
+              value={input} onChange={e => setInput(e.target.value)}
+              placeholder="Sinyal gönder..." 
+              style={{ flex: 1, background: '#000', border: '1px solid #222', color: '#fff', padding: '10px', outline: 'none', fontSize: '13px' }}
+            />
+            <button disabled={loading} style={{ background: '#0055ff', border: 'none', color: '#fff', padding: '10px 15px', cursor: 'pointer' }}>
+              <Send size={16} />
+            </button>
+          </form>
+        </section>
       </div>
     </div>
   );

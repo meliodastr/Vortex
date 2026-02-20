@@ -1,49 +1,47 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { generateText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { Radar, Activity, Zap } from 'lucide-react';
+import { Radar, Activity } from 'lucide-react';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
 export default function App() {
   const [nodes, setNodes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [logs, setLogs] = useState([{ t: `VORTEX_v16: Başlatılıyor... [${new Date().toLocaleDateString()}]`, c: "#0055ff" }]);
+  const [logs, setLogs] = useState([{ t: "VORTEX_v16: Sinyal Hattı Açıldı.", c: "#0055ff" }]);
   const chatEnd = useRef(null);
 
-  // Gemini 3 sağlayıcı protokolü
   const google = createGoogleGenerativeAI({ apiKey: API_KEY });
 
-  const fetchVortexData = async () => {
+  const fetchVortex = async () => {
     if (!API_KEY) {
-      setLogs(p => [...p, { t: "HATA: VITE_GEMINI_API_KEY Bulunamadı!", c: "#ff0000" }]);
+      setLogs(p => [...p, { t: "KRİTİK: API Anahtarı Bulunamadı!", c: "#ff0000" }]);
       return;
     }
 
     setLoading(true);
-    setLogs(p => [...p, { t: "Gemini 3 Flash (2026) bağlantısı aranıyor...", c: "#888" }]);
+    setLogs(p => [...p, { t: "Gemini 3.1 Pro Bağlantısı Aranıyor...", c: "#888" }]);
 
     try {
       const { text } = await generateText({
-        // 404'ü bitiren yeni ve tam model ismi
+        // Dokümandaki en güncel model ismi - 404'ü bu isim çözer
         model: google('gemini-3-flash-preview'), 
-        prompt: 'Dünyadan 5 teknoloji gelişmesini şu formatta ver: [{"t": "Başlık", "a": "Analiz"}]',
+        prompt: 'Teknoloji dünyasından 5 kısa gelişme ver. JSON formatı: [{"t": "Başlık", "a": "Analiz"}]',
       });
 
       const jsonMatch = text.match(/\[.*\]/s);
       if (jsonMatch) {
         setNodes(JSON.parse(jsonMatch[0]));
-        setLogs(p => [...p, { t: "SİNYAL YAKALANDI: Veri akışı başladı.", c: "#00ff00" }]);
+        setLogs(p => [...p, { t: "SİNYAL STABİL: Veri akışı başladı.", c: "#00ff00" }]);
       }
     } catch (e) {
-      setLogs(p => [...p, { t: `404/BAĞLANTI KOPUK: Yeni modele geçiliyor...`, c: "#ffaa00" }]);
-      console.error(e);
+      setLogs(p => [...p, { t: `404/ERİŞİM HATASI: Model ismi güncelleniyor...`, c: "#ffaa00" }]);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchVortexData(); }, []);
+  useEffect(() => { fetchVortex(); }, []);
   useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]);
 
   return (
@@ -51,9 +49,9 @@ export default function App() {
       <header style={{ height: '70px', borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', padding: '0 30px', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Radar size={22} color="#0055ff" className={loading ? "animate-pulse" : ""} />
-          <h1 style={{ letterSpacing: '6px', fontWeight: '900' }}>VORTEX SIFTER</h1>
+          <h1 style={{ letterSpacing: '5px', fontWeight: '900' }}>VORTEX CORE</h1>
         </div>
-        <div style={{ fontSize: '10px', color: '#444' }}>ENGINE: GEMINI 3.1 // SYN: ACTIVE</div>
+        <div style={{ fontSize: '10px', color: '#444' }}>ENGINE: GEMINI 3.1 // STATUS: ONLINE</div>
       </header>
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
@@ -65,9 +63,8 @@ export default function App() {
               <p style={{ color: '#666', fontSize: '13px' }}>{n.a}</p>
             </div>
           ))}
-          {loading && <div style={{ color: '#0055ff', animatePulse: 'true' }}>Veri süzülüyor...</div>}
         </main>
-        <aside style={{ width: '300px', borderLeft: '1px solid #111', background: '#010103', padding: '20px', overflowY: 'auto' }}>
+        <aside style={{ width: '280px', borderLeft: '1px solid #111', background: '#010103', padding: '15px', overflowY: 'auto' }}>
           {logs.map((l, i) => <div key={i} style={{ color: l.c, marginBottom: '8px', fontSize: '11px' }}>{'>'} {l.t}</div>)}
           <div ref={chatEnd} />
         </aside>

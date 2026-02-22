@@ -2,55 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --color-vortex-dark: #020617;
-  --color-vortex-blue: #2563eb;
-  --color-vortex-cyan: #22d3ee;
-}
-
 body {
   margin: 0;
-  padding: 0;
-  background-color: var(--color-vortex-dark);
+  background-color: #020202;
   color: white;
-  min-height: 100vh;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  overflow: hidden; /* Vortex Radar tam ekran çalışır */
+  overflow-x: hidden;
 }
 
-/* Animasyonları v3 formatına çektik */
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
 }
-
-@keyframes reverse-spin {
-  from { transform: rotate(360deg); }
-  to { transform: rotate(0deg); }
-}
-
-.animate-spin-slow {
-  animation: spin-slow 20s linear infinite;
-}
-
-.animate-reverse-spin {
-  animation: reverse-spin 15s linear infinite;
-}
-
-/* Scrollbar'ı Vortex temasına uyduruyoruz */
-::-webkit-scrollbar {
-  width: 5px;
-}
-
-::-webkit-scrollbar-track {
-  background: #020617;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #1e293b;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #222;
   border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #3b82f6;
 }
